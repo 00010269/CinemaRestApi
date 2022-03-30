@@ -12,4 +12,17 @@ public interface TicketService {
     HttpEntity<?> addToCart(UUID seatId,UUID sessionId);
 
     void scheduleDeleteTicket(Ticket savedTicket);
+
+    HttpEntity<?> purchaseTicket(UUID ticketId);
+
+    HttpEntity<?> getCurrentUsersTicket(UUID id);
+
+
+    HttpEntity<?> refundTicket(UUID ticketId); // TODO: 3/29/2022 test refund ticket
+
+
+
+
+
+
 }

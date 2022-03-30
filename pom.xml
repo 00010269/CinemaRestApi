@@ -72,6 +72,22 @@
         </dependency>
 
 
+        <!-- https://mvnrepository.com/artifact/com.itextpdf/layout -->
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>layout</artifactId>
+            <version>7.2.1</version>
+        </dependency>
+
+
+        <dependency>
+            <groupId>com.stripe</groupId>
+            <artifactId>stripe-java</artifactId>
+            <version>20.108.0</version>
+        </dependency>
+
+
+
     </dependencies>
 
     <build>

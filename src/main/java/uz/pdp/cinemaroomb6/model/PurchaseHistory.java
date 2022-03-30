@@ -25,4 +25,14 @@ public class PurchaseHistory extends AbsEntity {
 
     @ManyToOne
     private PayType payType;
+
+    public PurchaseHistory(Ticket ticket) {
+        this.ticket = ticket;
+    }
+
+
+    public PurchaseHistory(Users user, Ticket ticket) {
+        this.user = user;
+        this.ticket = ticket;
+    }
 }

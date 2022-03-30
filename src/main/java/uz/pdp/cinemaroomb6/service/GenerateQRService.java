@@ -4,12 +4,12 @@ import com.google.zxing.*;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
-import com.itextpdf.text.Document;
-import com.itextpdf.text.DocumentException;
-import com.itextpdf.text.Image;
-import com.itextpdf.text.Rectangle;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.BarcodeQRCode;
 import com.itextpdf.text.pdf.PdfWriter;
+
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -56,6 +56,28 @@ public class GenerateQRService {
         Image qr_image = my_code.getImage();
         //Step-7: Stamp the QR image into the PDF document
         qr_code_Example.add(qr_image);
+
+
+//        // create table
+//
+//        Paragraph paragraph = new Paragraph("This is ticket for Cinema");
+//        qr_code_Example.add((Element) paragraph);
+//
+//        float[] columns = {30f, 30f, 300f};
+//        Table table = new Table(columns);
+//        table.addCell("Id");
+//        table.addCell("userId");
+//        table.addCell("title");
+//
+//        table.addCell(qrCodeName);
+//        table.addCell(qr_image.toString());
+//        table.addCell(my_code.toString());
+//
+//        qr_code_Example.add((Element) table);
+
+
+
+
         //Step-8: Close the PDF document
         qr_code_Example.close();
         return path;

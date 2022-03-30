@@ -71,6 +71,9 @@ public class DataLoader implements CommandLineRunner {
     @Autowired
     UserRepository userRepository;
 
+    @Autowired
+    PayTypeRepository payTypeRepository;
+
 
     @Override
     public void run(String... args) throws Exception {
@@ -162,7 +165,7 @@ public class DataLoader implements CommandLineRunner {
             List<Cast> castList = new ArrayList<>(Arrays.asList(
                     new Cast("Lazizbek", null, CastType.CAST_ACTOR),
                     new Cast("Abror", null, CastType.CAST_ACTOR),
-                    new Cast("Avaz", null, CastType.CAST_ACTOR),
+                    new Cast("Nurbek", null, CastType.CAST_ACTOR),
                     new Cast("Eldor", null, CastType.CAST_ACTOR)
             ));
             List<Cast> savedCastList = castRepository.saveAll(castList);
@@ -236,9 +239,17 @@ public class DataLoader implements CommandLineRunner {
 //            )
 //            );
 //            ticketRepository.saveAll(ticketList);
+
+
+
+
+            List<PayType> payTypes = new ArrayList<>(Arrays.asList(
+                    new PayType("Stripe", null)
+            ));
+            payTypeRepository.saveAll(payTypes);
+
+
         }
-
-
 
 
     }
