@@ -4,6 +4,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import uz.pdp.cinemaroomb6.model.Ticket;
+import uz.pdp.cinemaroomb6.model.enums.TicketStatus;
+import uz.pdp.cinemaroomb6.projection.PdfTicketProjection;
 import uz.pdp.cinemaroomb6.projection.TicketProjection;
 
 import java.util.List;
@@ -47,6 +49,39 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
             " where user_id =:userId and status = 'NEW'")
 
     List<Ticket> findAllByUserId(UUID userId);
+
+
+
+    List<Ticket> findByUserId(UUID userId);
+
+    List<Ticket> findAllByUserIdAndStatus(UUID userId, TicketStatus status);
+
+
+
+    @Query(nativeQuery = true,
+    value = "select sum(price) from tickets " +
+            " where user_id = :userId and status = 'NEW'")
+    Double getTotalAmountOfTickets(UUID userId);
+
+
+
+
+    @Query(nativeQuery = true, value = "select cast(t.id as varchar) as ticketId, " +
+            " m.title as movieTitle, " +
+            " h.name as hallName, " +
+            " r.number as rowNumber, " +
+            " s.number as seatNumber, " +
+            " sd.date as sessionDate " +
+            " from tickets t " +
+            " join seats s on s.id = t.seat_id " +
+            " join movie_sessions ms on ms.id = t.movie_session_id " +
+            " join halls h on h.id = ms.hall_id " +
+            " join rows r on s.row_id = r.id " +
+            " join session_dates sd on ms.session_date_id = sd.id " +
+            " join movie_announcements ma on ma.id = ms.movie_announcement_id " +
+            " join movies m on ma.movie_id = m.id " +
+            " where t.id=:id")
+    PdfTicketProjection getPdfTicket(UUID id);
 
 
 }

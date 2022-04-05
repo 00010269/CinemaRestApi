@@ -11,9 +11,16 @@ import java.util.UUID;
 @Data
 public class TicketDto {
 
+    UUID ticketId;
+
     UUID sessionId;
 
     UUID seatId;
 
+    UUID userId;
+
+    private double price;
+
+    private String movieTitle;
 
 }

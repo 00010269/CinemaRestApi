@@ -18,4 +18,5 @@ public enum TicketStatus {
                         TicketStatus.values())
                 .filter(castType -> castType.displayStatus.equals(displayStatusDto)).findFirst().get();
     }
+
 }

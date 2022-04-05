@@ -7,8 +7,9 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import uz.pdp.cinemaroomb6.model.template.AbsEntity;
 
-import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
+import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
@@ -20,19 +21,30 @@ public class PurchaseHistory extends AbsEntity {
     @ManyToOne
     private Users user;
 
-    @ManyToOne
-    private Ticket ticket;
+    @ManyToMany
+    @JoinTable(
+            name = "purchase_hisories_tickets",
+            joinColumns = @JoinColumn(name = "purchase_history_id"),
+            inverseJoinColumns = @JoinColumn(name = "ticket_id")
+    )
+    private List<Ticket> ticketList;
 
     @ManyToOne
     private PayType payType;
 
-    public PurchaseHistory(Ticket ticket) {
-        this.ticket = ticket;
-    }
+    private Double amount;
 
+    @NotNull
+    @Column(nullable = false)
+    private boolean isRefunded = false;
 
-    public PurchaseHistory(Users user, Ticket ticket) {
-        this.user = user;
-        this.ticket = ticket;
+    private String paymentIntent;
+
+    public PurchaseHistory(List<Ticket> ticketList, PayType payType, Double amount, boolean isRefunded, String paymentIntent) {
+        this.ticketList = ticketList;
+        this.payType = payType;
+        this.amount = amount;
+        this.isRefunded = isRefunded;
+        this.paymentIntent = paymentIntent;
     }
 }

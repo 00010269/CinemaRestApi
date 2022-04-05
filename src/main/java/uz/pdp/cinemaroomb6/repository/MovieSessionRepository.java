@@ -8,6 +8,7 @@ import uz.pdp.cinemaroomb6.projection.MovieSessionByIdProjection;
 import uz.pdp.cinemaroomb6.projection.MovieSessionProjection;
 import uz.pdp.cinemaroomb6.projection.MovieSessionQRInfoProjection;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -59,6 +60,15 @@ public interface MovieSessionRepository extends JpaRepository<MovieSession, UUID
             " join session_dates sd on sd.id = ms.session_date_id " +
             " where ms.id=:sessionId")
     MovieSessionQRInfoProjection findBySessionIdQRInfo(UUID sessionId);
+
+
+
+
+    @Query(nativeQuery = true,
+    value = "select sd.date from movie_sessions ms " +
+            " join session_dates sd on sd.id = ms.session_date_id " +
+            " where ms.id=:movieSessionId")
+    LocalDate getDateByTicketMovieSessionId(MovieSession movieSessionId);
 
 
 }

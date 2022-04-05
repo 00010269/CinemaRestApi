@@ -1,5 +1,7 @@
 package uz.pdp.cinemaroomb6.service;
 
+import com.stripe.model.checkout.Session;
+import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
@@ -12,14 +14,16 @@ import uz.pdp.cinemaroomb6.model.Ticket;
 import uz.pdp.cinemaroomb6.model.enums.TicketStatus;
 import uz.pdp.cinemaroomb6.payload.ApiResponse;
 import uz.pdp.cinemaroomb6.projection.MovieSessionQRInfoProjection;
+import uz.pdp.cinemaroomb6.projection.PdfTicketProjection;
 import uz.pdp.cinemaroomb6.projection.TicketProjection;
 import uz.pdp.cinemaroomb6.repository.*;
 import uz.pdp.cinemaroomb6.service.interfaces.TicketService;
 
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.UUID;
+import java.time.LocalDate;
+import java.time.Period;
+import java.util.*;
+
+import static uz.pdp.cinemaroomb6.utils.Constants.USER_ID;
 
 
 @Service
@@ -40,6 +44,15 @@ public class TicketServiceImpl implements TicketService {
     @Autowired
     PurchaseHistoryRepository purchaseHistoryRepository;
 
+    @Autowired
+    StripePaymentServiceImpl stripePaymentService;
+
+    @Autowired
+    EmailSendServiceImpl emailSendService;
+
+    @Autowired
+    GenerateQRService qrService;
+
 
     @Override
     public HttpEntity addToCart(UUID seatId, UUID sessionId) {
@@ -51,12 +64,14 @@ public class TicketServiceImpl implements TicketService {
             System.out.println(movieSessionQRInfoProjection.toString());
             Ticket ticket = new Ticket(
                     movieSession,
-                    seat, GenerateQRService.createQRCodeItext(movieSessionQRInfoProjection.toString(),"123"),
-//                    seat, GenerateQRService.createQRCode(movieSessionQRInfoProjection.toString(), "123"),
+                    seat,
+                    "" + movieSessionQRInfoProjection,
                     price,
-                    userRepository.getById(UUID.fromString("0ab4c06b-488d-4a65-9a3f-ad68f7c65414")),
-                    TicketStatus.NEW
-            );
+                    userRepository.getById(UUID.fromString(USER_ID)), TicketStatus.NEW
+////                    seat, GenerateQRService.createQRCodeItext(movieSessionQRInfoProjection.toString(), "123"),
+////                    seat, GenerateQRService.createQRCode(movieSessionQRInfoProjection.toString(), "123"),
+
+                    );
             Ticket savedTicket = ticketRepository.save(ticket);
             scheduleDeleteTicket(savedTicket);
             return ResponseEntity.ok(
@@ -84,19 +99,38 @@ public class TicketServiceImpl implements TicketService {
 
 
     @Override
-    public HttpEntity<?> purchaseTicket(UUID ticketId) {
+    public HttpEntity<?> purchaseTicket(UUID userId, Session session) {
 
         try {
-            Ticket ticket = ticketRepository.findById(ticketId).orElseThrow(
-                    () -> new NotFoundException("Ticket: " + ticketId + " not found")
+            List<Ticket> ticketsByUserId = ticketRepository.findAllByUserIdAndStatus(userId, TicketStatus.NEW);
+            double ticketPrice = 0;
+            for (Ticket ticket : ticketsByUserId) {
+                ticketPrice += ticketRepository.getTicketPrice(ticket.getSeat().getId(), ticket.getMovieSession().getId());
+                ticket.setStatus(TicketStatus.PURCHASED);
+                ticketRepository.save(ticket);
+            }
+
+            PdfTicketProjection projection = ticketRepository.getPdfTicket(ticketsByUserId.get(0).getId());
+            qrService.createQRCode("This is QR Code");
+            qrService.generatePdf(projection);
+
+//            emailSendService.sendMessage(
+//                    "wiut00010269@gmail.com",
+//                    "What's up man",
+//                    "How is it going your studies?"
+//            );
+
+            emailSendService.sendMessageWithAttachment(
+                    "wiut00010269@gmail.com",
+                    "What's up man",
+                    "How is it going your studies?",
+                    "E:\\Programming\\Unicorn\\Cinema ROOM Rest Service\\Cinema-room-b6\\src\\main\\resources\\NewTicket.pdf"
             );
-            ticket.setStatus(TicketStatus.PURCHASED);
-            purchaseHistoryRepository.save(new PurchaseHistory(
-                    userRepository.getById(ticket.getUser().getId()),
-                            ticket,
-                            null
-            ));
-            ticketRepository.save(ticket);
+
+            purchaseHistoryRepository.save(
+                    new PurchaseHistory(ticketsByUserId, null, ticketPrice, false, session.getPaymentIntent())
+            );
+
             return ResponseEntity.ok(
                     new ApiResponse("success", true)
             );
@@ -115,14 +149,45 @@ public class TicketServiceImpl implements TicketService {
     }
 
 
-
-    @Override   // TODO: 3/29/2022 test refund ticket
+    @SneakyThrows
+    @Override
     public HttpEntity<?> refundTicket(UUID ticketId) {
-        return null;
+        Ticket ticket = ticketRepository.findById(ticketId).orElseThrow(() ->
+                new NotFoundException("Ticket: " + ticketId + " not found")
+        );
+        if (ticket.getStatus().equals(TicketStatus.PURCHASED)) {
+            LocalDate sessionDate =
+                    movieSessionRepository.getDateByTicketMovieSessionId(ticket.getMovieSession());
+            Period period = Period.between(LocalDate.now(), sessionDate);
+            double refundSum;
+            if (period.getDays() <= 1) {
+                refundSum = ticket.getPrice() * 0.2 * 100;
+            } else {
+                refundSum = ticket.getPrice() * 0.5 * 100;
+            }
+
+            String paymentIntent = purchaseHistoryRepository.getPaymentIntent(ticketId);
+            if (stripePaymentService.refundTicket(paymentIntent, refundSum)) {
+                ticket.setStatus(TicketStatus.REFUNDED);
+                ticketRepository.save(ticket);
+                purchaseHistoryRepository.save(
+                        new PurchaseHistory(Collections.singletonList(ticket), null, refundSum / 100,
+                                true, null)
+                );
+                return ResponseEntity.ok(
+                        new ApiResponse("success", true)
+                );
+            } else {
+                return ResponseEntity.ok(
+                        new ApiResponse("failed", false)
+                );
+            }
+        } else {
+            return ResponseEntity.ok(
+                    new ApiResponse("failed", false)
+            );
+        }
     }
-
-
-
 
 
 }
